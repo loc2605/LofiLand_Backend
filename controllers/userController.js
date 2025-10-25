@@ -45,7 +45,7 @@ export const registerUser = async (req, res) => {
 // === Đăng nhập ===
 export const loginUser = async (req, res) => {
   try {
-    const { identifier, password } = req.body; // identifier = username hoặc email
+    const { identifier, password } = req.body;
 
     if (!identifier || !password) {
       return res.status(400).json({ message: "Thiếu thông tin đăng nhập" });

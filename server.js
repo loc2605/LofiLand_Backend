@@ -3,10 +3,13 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import connectDB from "./config/db.js";
 import userRoutes from "./routes/userRoutes.js";
+import songRoutes from "./routes/songRoutes.js";
+import artistRoutes from "./routes/artistRoutes.js";
+import albumRoutes from "./routes/albumRoutes.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 import cors from "cors";
 
-dotenv.config(); // đọc .env
+dotenv.config();
 
 const app = express();
 
@@ -17,9 +20,6 @@ app.use(express.json());
 // connect DB
 connectDB();
 
-const Test = mongoose.model("Test", new mongoose.Schema({ name: String }));
-await Test.create({ name: "Hello LofiLand" });
-
 // route test
 app.get("/", (req, res) => {
   res.send("LofiLand API is running...");
@@ -27,6 +27,9 @@ app.get("/", (req, res) => {
 
 // routes chính
 app.use("/api/users", userRoutes);
+app.use("/api/songs", songRoutes);
+app.use("/api/artists", artistRoutes);
+app.use("/api/albums", albumRoutes);
 
 // middleware xử lý lỗi
 app.use(notFound);
@@ -34,6 +37,6 @@ app.use(errorHandler);
 
 // chạy server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () =>
+app.listen(PORT,  '0.0.0.0', () =>
   console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`)
 );
