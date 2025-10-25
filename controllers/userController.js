@@ -88,3 +88,19 @@ export const loginUser = async (req, res) => {
     res.status(500).json({ message: "Lỗi server" });
   }
 };
+  // === Lấy thông tin user hiện tại ===
+  export const getCurrentUser = (req, res) => {
+    try {
+      // req.user được gắn từ authMiddleware
+      const user = req.user;
+      res.json({
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        avatarUrl: user.avatarUrl,
+      });
+    } catch (err) {
+      console.error("Get user error:", err);
+      res.status(500).json({ message: "Lỗi server" });
+    }
+  };

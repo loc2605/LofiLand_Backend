@@ -1,4 +1,4 @@
-import Artist from "../models/artistModel.js";
+import Artist from "../models/Artist.js";
 
 // Lấy tất cả artist
 export const getArtists = async (req, res) => {
