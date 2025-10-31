@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 // === Đăng ký ===
 export const registerUser = async (req, res) => {
   try {
-    const { username, email, password, avatarUrl } = req.body;
+    const { username, email, password } = req.body;
 
     if (!username || !email || !password) {
       return res.status(400).json({ message: "Thiếu thông tin đăng ký" });
@@ -22,7 +22,6 @@ export const registerUser = async (req, res) => {
       username,
       email,
       password: hashedPassword,
-      avatarUrl,
     });
 
     await newUser.save();

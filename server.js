@@ -6,6 +6,7 @@ import userRoutes from "./routes/userRoutes.js";
 import songRoutes from "./routes/songRoutes.js";
 import artistRoutes from "./routes/artistRoutes.js";
 import albumRoutes from "./routes/albumRoutes.js";
+import uploadRoutes from "./routes/uploadRoutes.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 import cors from "cors";
 
@@ -30,6 +31,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/songs", songRoutes);
 app.use("/api/artists", artistRoutes);
 app.use("/api/albums", albumRoutes);
+app.use("/api/upload", uploadRoutes);
 
 // middleware xử lý lỗi
 app.use(notFound);
@@ -37,6 +39,6 @@ app.use(errorHandler);
 
 // chạy server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT,  '0.0.0.0', () =>
-  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`)
+app.listen(PORT, "0.0.0.0", () =>
+  console.log(` Server running in ${process.env.NODE_ENV} mode on port ${PORT}`)
 );
