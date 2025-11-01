@@ -1,4 +1,5 @@
 import User from "../models/User.js";
+import { uploadFile } from "../utils/file.service.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -103,3 +104,35 @@ export const loginUser = async (req, res) => {
       res.status(500).json({ message: "Lỗi server" });
     }
   };
+
+  // === Chỉnh sửa hồ sơ ===
+export const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { username } = req.body;
+    const file = req.file;
+
+    const updateData = {};
+    if (username) updateData.username = username;
+
+    if (file) {
+      const avatarUrl = await uploadFile(file);
+      updateData.avatarUrl = avatarUrl;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(userId, { $set: updateData }, { new: true });
+
+    res.json({
+      message: "Cập nhật hồ sơ thành công",
+      user: {
+        id: updatedUser._id,
+        username: updatedUser.username,
+        email: updatedUser.email,
+        avatarUrl: updatedUser.avatarUrl,
+      },
+    });
+  } catch (error) {
+    console.error("Update profile error:", error);
+    res.status(500).json({ message: "Lỗi server" });
+  }
+};
