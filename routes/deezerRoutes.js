@@ -116,17 +116,32 @@ router.get("/albums", async (req, res) => {
 // Route 5: Lấy ngẫu nhiên 1 bài hát
 router.get("/random", async (req, res) => {
   try {
-    const query = req.query.query || "lofi";
+    const genre = req.query.genre || "lofi";
+    const count = parseInt(req.query.count) || 1;
+    const excludeIds = (req.query.excludeIds)?.split(",") || [];
+
     const response = await axios.get(
-      `https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=50`
+      `https://api.deezer.com/search?q=${encodeURIComponent(genre)}&limit=50`
     );
-    const data = response.data.data;
-    if (!data.length) return res.status(404).json({ message: "Không tìm thấy bài hát" });
 
-    const track = data[Math.floor(Math.random() * data.length)];
+    let data = response.data.data.filter(
+      (track) => !excludeIds.includes(String(track.id))
+    );
 
-    res.json({
-      success: true,
+    if (!data.length) return res.status(404).json({ message: "Không tìm thấy bài hát phù hợp" });
+
+    const randomPick = (arr) =>
+      arr[Math.floor(Math.random() * arr.length)];
+
+    const pickTracks = count === 1
+      ? [randomPick(data)]
+      : Array.from({ length: Math.min(count, data.length) }, () => {
+          const t = randomPick(data);
+          data = data.filter((i) => i.id !== t.id);
+          return t;
+        });
+
+    const formatted = pickTracks.map((track) => ({
       id: track.id,
       title: track.title,
       artist: {
@@ -137,15 +152,18 @@ router.get("/random", async (req, res) => {
       album: {
         id: track.album?.id,
         title: track.album?.title,
-        coverUrl: track.album?.cover_medium,
+        coverUrl: track.album?.cover_medium || "",
       },
       audioUrl: track.preview,
       fullUrl: track.link,
-    });
+    }));
+
+    res.json({ success: true, tracks: formatted });
   } catch (error) {
     console.error("Deezer random error:", error.response?.data || error.message);
     res.status(500).json({ message: "Lỗi lấy bài hát ngẫu nhiên từ Deezer" });
   }
 });
+
 
 export default router;
