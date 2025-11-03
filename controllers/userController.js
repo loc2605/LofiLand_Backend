@@ -1,4 +1,5 @@
 import User from "../models/User.js";
+import { uploadFile } from "../utils/file.service.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -7,17 +8,27 @@ export const registerUser = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
+    // Kiểm tra dữ liệu đầu vào
     if (!username || !email || !password) {
       return res.status(400).json({ message: "Thiếu thông tin đăng ký" });
     }
 
-    const existUser = await User.findOne({ email });
-    if (existUser) {
+    // Kiểm tra email đã tồn tại chưa
+    const existEmail = await User.findOne({ email });
+    if (existEmail) {
       return res.status(400).json({ message: "Email đã được sử dụng" });
     }
 
+    // Kiểm tra username đã tồn tại chưa
+    const existUsername = await User.findOne({ username });
+    if (existUsername) {
+      return res.status(400).json({ message: "Username đã được sử dụng" });
+    }
+
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Tạo user mới
     const newUser = new User({
       username,
       email,
@@ -37,6 +48,15 @@ export const registerUser = async (req, res) => {
     });
   } catch (error) {
     console.error("Register error:", error);
+
+    // Bắt lỗi duplicate key phòng trường hợp bỏ sót
+    if (error.code === 11000) {
+      const duplicateField = Object.keys(error.keyValue)[0];
+      return res.status(400).json({
+        message: `${duplicateField.charAt(0).toUpperCase() + duplicateField.slice(1)} đã được sử dụng`,
+      });
+    }
+
     res.status(500).json({ message: "Lỗi server" });
   }
 };
@@ -103,3 +123,35 @@ export const loginUser = async (req, res) => {
       res.status(500).json({ message: "Lỗi server" });
     }
   };
+
+  // === Chỉnh sửa hồ sơ ===
+export const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { username } = req.body;
+    const file = req.file;
+
+    const updateData = {};
+    if (username) updateData.username = username;
+
+    if (file) {
+      const avatarUrl = await uploadFile(file);
+      updateData.avatarUrl = avatarUrl;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(userId, { $set: updateData }, { new: true });
+
+    res.json({
+      message: "Cập nhật hồ sơ thành công",
+      user: {
+        id: updatedUser._id,
+        username: updatedUser.username,
+        email: updatedUser.email,
+        avatarUrl: updatedUser.avatarUrl,
+      },
+    });
+  } catch (error) {
+    console.error("Update profile error:", error);
+    res.status(500).json({ message: "Lỗi server" });
+  }
+};

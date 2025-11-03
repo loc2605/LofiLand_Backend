@@ -1,7 +1,7 @@
 # 🧠 LofiLand - Backend API
 
 Đây là **Backend** của dự án **LofiLand**, ứng dụng nghe nhạc đa nền tảng.  
-Dự án được xây dựng bằng **Node.js**, sử dụng **MongoDB Atlas** làm cơ sở dữ liệu và **AWS S3** để lưu trữ hình ảnh (avatar, ảnh playlist, ảnh album,...).
+Dự án được xây dựng bằng **Node.js**, sử dụng **MongoDB Atlas** làm cơ sở dữ liệu và **AWS S3** để lưu trữ avatar người dùng.
 
 ---
 
