@@ -1,10 +1,14 @@
 import express from "express";
-import { addToFavorites, getFavorites } from "../controllers/favoriteController.js";
-import { isAuthenticated } from "../middleware/authMiddleware.js";
+import {
+  addToFavorites,
+  getFavorites,
+  removeFromFavorites,
+} from "../controllers/favoriteController.js";
+import { authMiddleware } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
-
-router.post("/", isAuthenticated, addToFavorites);
-router.get("/", isAuthenticated, getFavorites);
+router.post("/", authMiddleware, addToFavorites);
+router.get("/", authMiddleware, getFavorites);
+router.delete("/:songId", authMiddleware, removeFromFavorites);
 
 export default router;

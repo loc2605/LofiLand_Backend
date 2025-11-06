@@ -8,7 +8,7 @@ import artistRoutes from "./routes/artistRoutes.js";
 import albumRoutes from "./routes/albumRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
 import favoriteRoutes from "./routes/favoriteRoutes.js";
-import playlistRoutes from "./routes/playlistRoutes.js";
+import playlistRoutes from "./routes/playlistsRoutes.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 import deezerRoutes from "./routes/deezerRoutes.js";
 import cors from "cors";
