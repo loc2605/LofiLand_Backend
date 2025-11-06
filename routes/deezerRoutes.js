@@ -7,9 +7,18 @@ const router = express.Router();
 router.get("/tracks", async (req, res) => {
   try {
     const query = req.query.query;
-    const response = await axios.get(
-      `https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=20`
-    );
+
+    let response;
+
+    if (query) {
+      // Nếu có query thì search
+      response = await axios.get(
+        `https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=20`
+      );
+    } else {
+      // Nếu không có query thì lấy chart toàn cầu
+      response = await axios.get(`https://api.deezer.com/chart/0/tracks?limit=20`);
+    }
 
     const tracks = response.data.data.map((track) => ({
       id: track.id,
@@ -63,16 +72,25 @@ router.get("/tracks/:id", async (req, res) => {
     res.status(500).json({ message: "Lỗi khi lấy track từ Deezer" });
   }
 });
-
-// Route 3: Lấy danh sách nghệ sĩ
+// Route 3: Lấy danh sách nghệ sĩ (ưu tiên top chart)
 router.get("/artists", async (req, res) => {
   try {
-    const query = req.query.query;
-    const response = await axios.get(
-      `https://api.deezer.com/search/artist?q=${encodeURIComponent(query)}&limit=20`
-    );
+    const query = req.query.query; // nếu muốn filter theo tên vẫn dùng
+    let response;
 
-    const artists = response.data.data.map((artist) => ({
+    if (query) {
+      // Tìm kiếm theo keyword
+      response = await axios.get(
+        `https://api.deezer.com/search/artist?q=${encodeURIComponent(query)}&limit=20`
+      );
+      response = response.data;
+    } else {
+      // Lấy chart artists
+      const chartRes = await axios.get(`https://api.deezer.com/chart`);
+      response = chartRes.data.artists; // top artists
+    }
+
+    const artists = response.data.map((artist) => ({
       id: artist.id,
       name: artist.name,
       avatarUrl: artist.picture_medium || "",
@@ -87,15 +105,24 @@ router.get("/artists", async (req, res) => {
   }
 });
 
-// Route 4: Lấy danh sách album
+// Route 4: Lấy danh sách album (ưu tiên top chart)
 router.get("/albums", async (req, res) => {
   try {
     const query = req.query.query;
-    const response = await axios.get(
-      `https://api.deezer.com/search/album?q=${encodeURIComponent(query)}&limit=20`
-    );
+    let response;
 
-    const albums = response.data.data.map((album) => ({
+    if (query) {
+      response = await axios.get(
+        `https://api.deezer.com/search/album?q=${encodeURIComponent(query)}&limit=20`
+      );
+      response = response.data;
+    } else {
+      // Lấy chart albums
+      const chartRes = await axios.get(`https://api.deezer.com/chart`);
+      response = chartRes.data.albums; // top albums
+    }
+
+    const albums = response.data.map((album) => ({
       id: album.id,
       title: album.title,
       artist: {
@@ -112,6 +139,7 @@ router.get("/albums", async (req, res) => {
     res.status(500).json({ message: "Lỗi lấy danh sách album từ Deezer" });
   }
 });
+
 
 // Route 5: Lấy ngẫu nhiên 1 bài hát
 router.get("/random", async (req, res) => {
