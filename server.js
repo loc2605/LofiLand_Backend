@@ -7,6 +7,8 @@ import songRoutes from "./routes/songRoutes.js";
 import artistRoutes from "./routes/artistRoutes.js";
 import albumRoutes from "./routes/albumRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
+import favoriteRoutes from "./routes/favoriteRoutes.js";
+import playlistRoutes from "./routes/playlistRoutes.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 import deezerRoutes from "./routes/deezerRoutes.js";
 import cors from "cors";
@@ -34,6 +36,8 @@ app.use("/api/artists", artistRoutes);
 app.use("/api/albums", albumRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/deezer", deezerRoutes);
+app.use("/api/favorites", favoriteRoutes);
+app.use("/api/playlists", playlistRoutes);
 
 // middleware xử lý lỗi
 app.use(notFound);
