@@ -191,7 +191,7 @@ export const getRandomTracks = async (req, res) => {
 // Lấy danh sách bài hát của 1 album
 export const getTracksByAlbum = async (req, res) => {
   try {
-    const { albumId } = req.params; // albumId truyền từ URL
+    const { albumId } = req.params;
 
     if (!albumId) {
       return res.status(400).json({ message: "Thiếu albumId" });
@@ -199,22 +199,29 @@ export const getTracksByAlbum = async (req, res) => {
 
     const { data } = await axios.get(`https://api.deezer.com/album/${albumId}`);
 
-    // Deezer trả về data.tracks.data là mảng bài hát
+    if (data.error) {
+      return res.status(404).json({ message: data.error.message || "Không tìm thấy album." });
+    }
+
+    if (!data.tracks || !data.tracks.data) {
+      return res.status(404).json({ message: "Album không có bài hát." });
+    }
+
     const tracks = data.tracks.data.map((track) => ({
-      id: track.id,
-      title: track.title,
+      id: track.id || '',
+      title: track.title || 'Unknown Title',
       artist: {
-        id: track.artist?.id,
-        name: track.artist?.name,
-        avatarUrl: track.artist?.picture_medium || "",
+        id: track.artist?.id || '',
+        name: track.artist?.name || 'Unknown Artist',
+        avatarUrl: track.artist?.picture_medium || 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
       },
       album: {
-        id: data.id,
-        title: data.title,
-        coverUrl: data.cover_medium || "",
+        id: data.id || '',
+        title: data.title || 'Unknown Album',
+        coverUrl: data.cover_medium || 'https://placehold.co/300x300',
       },
-      audioUrl: track.preview,
-      fullUrl: track.link,
+      audioUrl: track.preview || '',
+      fullUrl: track.link || '',
     }));
 
     res.json({ success: true, tracks });

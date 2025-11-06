@@ -15,6 +15,6 @@ router.get("/tracks/:id", getTrackById);
 router.get("/artists", getArtists);
 router.get("/albums", getAlbums);
 router.get("/random", getRandomTracks);
-router.get("/albums/:id/tracks", getTracksByAlbum);
+router.get("/album/:albumId/tracks", getTracksByAlbum); 
 
 export default router;
