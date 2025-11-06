@@ -1,5 +1,4 @@
 import Album from "../models/Album.js";
-import Artist from "../models/Artist.js";
 
 // Lấy tất cả album
 export const getAlbums = async (req, res) => {
