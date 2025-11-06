@@ -187,3 +187,39 @@ export const getRandomTracks = async (req, res) => {
     res.status(500).json({ message: "Lỗi lấy bài hát ngẫu nhiên từ Deezer" });
   }
 };
+
+// Lấy danh sách bài hát của 1 album
+export const getTracksByAlbum = async (req, res) => {
+  try {
+    const { albumId } = req.params; // albumId truyền từ URL
+
+    if (!albumId) {
+      return res.status(400).json({ message: "Thiếu albumId" });
+    }
+
+    const { data } = await axios.get(`https://api.deezer.com/album/${albumId}`);
+
+    // Deezer trả về data.tracks.data là mảng bài hát
+    const tracks = data.tracks.data.map((track) => ({
+      id: track.id,
+      title: track.title,
+      artist: {
+        id: track.artist?.id,
+        name: track.artist?.name,
+        avatarUrl: track.artist?.picture_medium || "",
+      },
+      album: {
+        id: data.id,
+        title: data.title,
+        coverUrl: data.cover_medium || "",
+      },
+      audioUrl: track.preview,
+      fullUrl: track.link,
+    }));
+
+    res.json({ success: true, tracks });
+  } catch (error) {
+    console.error("Deezer album tracks error:", error.response?.data || error.message);
+    res.status(500).json({ message: "Lỗi lấy danh sách bài hát của album từ Deezer" });
+  }
+};
