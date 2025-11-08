@@ -230,3 +230,48 @@ export const getTracksByAlbum = async (req, res) => {
     res.status(500).json({ message: "Lỗi lấy danh sách bài hát của album từ Deezer" });
   }
 };
+
+// Lấy tất cả album và bài hát của 1 nghệ sĩ
+export const getArtistDetail = async (req, res) => {
+  try {
+    const { artistId } = req.params;
+    if (!artistId) {
+      return res.status(400).json({ message: "Thiếu artistId" });
+    }
+
+    // Lấy album của nghệ sĩ
+    const albumsRes = await axios.get(`https://api.deezer.com/artist/${artistId}/albums`);
+    const albumsData = albumsRes.data.data || [];
+    const albums = albumsData.map(album => ({
+      id: album.id,
+      title: album.title,
+      coverUrl: album.cover_medium || "",
+      link: album.link,
+    }));
+
+    // Lấy top 50 bài hát của nghệ sĩ
+    const tracksRes = await axios.get(`https://api.deezer.com/artist/${artistId}/top?limit=50`);
+    const tracksData = tracksRes.data.data || [];
+    const tracks = tracksData.map(track => ({
+      id: track.id,
+      title: track.title,
+      artist: {
+        id: track.artist?.id,
+        name: track.artist?.name,
+        avatarUrl: track.artist?.picture_medium || "",
+      },
+      album: {
+        id: track.album?.id,
+        title: track.album?.title,
+        coverUrl: track.album?.cover_medium || "",
+      },
+      audioUrl: track.preview,
+      fullUrl: track.link,
+    }));
+
+    res.json({ success: true, albums, tracks });
+  } catch (error) {
+    console.error("Deezer artist detail error:", error.response?.data || error.message);
+    res.status(500).json({ message: "Lỗi lấy thông tin nghệ sĩ từ Deezer" });
+  }
+};
