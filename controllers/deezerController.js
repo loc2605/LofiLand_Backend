@@ -84,7 +84,7 @@ export const getArtists = async (req, res) => {
     } else {
       // Lấy top chart artists
       const chartRes = await axios.get(`https://api.deezer.com/chart`);
-      response = chartRes.data.artists  || [];
+      response = chartRes.data.artists || [];
     }
 
     const artists = response.data.map((artist) => ({
@@ -102,22 +102,35 @@ export const getArtists = async (req, res) => {
   }
 };
 
-// Lấy danh sách album (ưu tiên chart)
 export const getAlbums = async (req, res) => {
   try {
-    const query = req.query.query || '';
-    let albumsData;
+    const query = req.query.query || "";
+    let albumsData = [];
 
     if (query) {
-      // Search album
+      // Nếu có query thì search album trực tiếp
       const searchRes = await axios.get(
-        `https://api.deezer.com/search/album?q=${encodeURIComponent(query)}&limit=20`
+        `https://api.deezer.com/search/album?q=${encodeURIComponent(query)}&limit=50`
       );
-      albumsData = searchRes.data.data;
+      albumsData = searchRes.data.data || [];
     } else {
-      // Top chart albums
-      const chartRes = await axios.get('https://api.deezer.com/chart');
-      albumsData = chartRes.data.albums?.data || []; // <-- fix ở đây
+      // Lấy 50 track chart
+      const trackRes = await axios.get(
+        `https://api.deezer.com/search?q=all&limit=50`
+      );
+      const tracksData = trackRes.data.data || [];
+
+      const albumMap = new Map();
+      tracksData.forEach(track => {
+        if (track.album && !albumMap.has(track.album.id)) {
+          albumMap.set(track.album.id, {
+            ...track.album,
+            artist: track.artist, 
+          });
+        }
+      });
+
+      albumsData = Array.from(albumMap.values());
     }
 
     const albums = albumsData.map(album => ({
@@ -127,7 +140,7 @@ export const getAlbums = async (req, res) => {
         id: album.artist?.id,
         name: album.artist?.name,
       },
-      coverUrl: album.cover_medium || '',
+      coverUrl: album.cover_medium || "",
       link: album.link,
     }));
 
@@ -137,6 +150,7 @@ export const getAlbums = async (req, res) => {
     res.status(500).json({ message: "Lỗi lấy danh sách album từ Deezer" });
   }
 };
+
 
 // Lấy bài hát ngẫu nhiên
 export const getRandomTracks = async (req, res) => {
