@@ -84,7 +84,7 @@ export const getArtists = async (req, res) => {
     } else {
       // Lấy top chart artists
       const chartRes = await axios.get(`https://api.deezer.com/chart`);
-      response = chartRes.data.artists;
+      response = chartRes.data.artists  || [];
     }
 
     const artists = response.data.map((artist) => ({
@@ -105,28 +105,29 @@ export const getArtists = async (req, res) => {
 // Lấy danh sách album (ưu tiên chart)
 export const getAlbums = async (req, res) => {
   try {
-    const query = req.query.query;
-    let response;
+    const query = req.query.query || '';
+    let albumsData;
 
     if (query) {
-      response = await axios.get(
+      // Search album
+      const searchRes = await axios.get(
         `https://api.deezer.com/search/album?q=${encodeURIComponent(query)}&limit=20`
       );
-      response = response.data;
+      albumsData = searchRes.data.data;
     } else {
-      // Lấy top chart albums
-      const chartRes = await axios.get(`https://api.deezer.com/chart`);
-      response = chartRes.data.albums;
+      // Top chart albums
+      const chartRes = await axios.get('https://api.deezer.com/chart');
+      albumsData = chartRes.data.albums?.data || []; // <-- fix ở đây
     }
 
-    const albums = response.data.map((album) => ({
+    const albums = albumsData.map(album => ({
       id: album.id,
       title: album.title,
       artist: {
         id: album.artist?.id,
         name: album.artist?.name,
       },
-      coverUrl: album.cover_medium || "",
+      coverUrl: album.cover_medium || '',
       link: album.link,
     }));
 
