@@ -246,28 +246,76 @@ export const getTracksByAlbum = async (req, res) => {
   }
 };
 
-// Lấy tất cả album và bài hát của 1 nghệ sĩ
+// Lấy thông tin chi tiết nghệ sĩ, bao gồm album và bài hát nổi bật
 export const getArtistDetail = async (req, res) => {
   try {
     const { artistId } = req.params;
-    if (!artistId) {
-      return res.status(400).json({ message: "Thiếu artistId" });
-    }
+    if (!artistId) return res.status(400).json({ message: "Thiếu artistId" });
 
-    // Lấy album của nghệ sĩ
-    const albumsRes = await axios.get(`https://api.deezer.com/artist/${artistId}/albums`);
+    // Gọi 3 API song song
+    const [artistRes, albumsRes, tracksRes] = await Promise.all([
+      axios.get(`https://api.deezer.com/artist/${artistId}`),
+      axios.get(`https://api.deezer.com/artist/${artistId}/albums`),
+      axios.get(`https://api.deezer.com/artist/${artistId}/top?limit=50`),
+    ]);
+
+    const artistData = artistRes.data || {};
     const albumsData = albumsRes.data.data || [];
+    const tracksData = tracksRes.data.data || [];
+
     const albums = albumsData.map(album => ({
-      id: album.id,
-      title: album.title,
-      coverUrl: album.cover_medium || "",
-      link: album.link,
+      id: album.id?.toString() || '',
+      title: album.title || 'Unknown Album',
+      coverUrl: album.cover_medium || 'https://placehold.co/300x300',
+      link: album.link || '',
     }));
 
-    // Lấy top 50 bài hát của nghệ sĩ
-    const tracksRes = await axios.get(`https://api.deezer.com/artist/${artistId}/top?limit=50`);
-    const tracksData = tracksRes.data.data || [];
     const tracks = tracksData.map(track => ({
+      id: track.id?.toString() || '',
+      title: track.title || 'Unknown Title',
+      artist: {
+        id: track.artist?.id?.toString() || '',
+        name: track.artist?.name || 'Unknown Artist',
+        avatarUrl: track.artist?.picture_medium || 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
+      },
+      album: {
+        id: track.album?.id?.toString() || '',
+        title: track.album?.title || 'Unknown Album',
+        coverUrl: track.album?.cover_medium || 'https://placehold.co/300x300',
+      },
+      audioUrl: track.preview || '',
+      duration: track.duration || 180,
+    }));
+
+    res.json({
+      success: true,
+      artist: {
+        id: artistId,
+        name: artistData.name || 'Unknown Artist',
+        avatarUrl: artistData.picture_medium || 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
+      },
+      albums,
+      tracks,
+    });
+
+  } catch (error) {
+    console.error("Deezer artist detail error:", error.response?.data || error.message);
+    res.status(500).json({ message: "Lỗi lấy thông tin nghệ sĩ từ Deezer" });
+  }
+};
+
+
+// Tìm kiếm tất cả: bài hát, album, nghệ sĩ
+export const searchAll = async (req, res) => {
+  try {
+    const query = req.query.query || "";
+    if (!query) {
+      return res.status(400).json({ message: "Thiếu query" });
+    }
+
+    // 1. Search tracks
+    const trackRes = await axios.get(`https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=20`);
+    const tracks = trackRes.data.data.map(track => ({
       id: track.id,
       title: track.title,
       artist: {
@@ -284,9 +332,32 @@ export const getArtistDetail = async (req, res) => {
       fullUrl: track.link,
     }));
 
-    res.json({ success: true, albums, tracks });
+    // 2. Search albums
+    const albumRes = await axios.get(`https://api.deezer.com/search/album?q=${encodeURIComponent(query)}&limit=20`);
+    const albums = albumRes.data.data.map(album => ({
+      id: album.id,
+      title: album.title,
+      artist: {
+        id: album.artist?.id,
+        name: album.artist?.name,
+      },
+      coverUrl: album.cover_medium || "",
+      link: album.link,
+    }));
+
+    // 3. Search artists
+    const artistRes = await axios.get(`https://api.deezer.com/search/artist?q=${encodeURIComponent(query)}&limit=20`);
+    const artists = artistRes.data.data.map(artist => ({
+      id: artist.id,
+      name: artist.name,
+      avatarUrl: artist.picture_medium || "",
+      link: artist.link,
+      nbFan: artist.nb_fan,
+    }));
+
+    res.json({ success: true, tracks, albums, artists });
   } catch (error) {
-    console.error("Deezer artist detail error:", error.response?.data || error.message);
-    res.status(500).json({ message: "Lỗi lấy thông tin nghệ sĩ từ Deezer" });
+    console.error("Search Deezer error:", error.response?.data || error.message);
+    res.status(500).json({ message: "Lỗi tìm kiếm Deezer" });
   }
 };

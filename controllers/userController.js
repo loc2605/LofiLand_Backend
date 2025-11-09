@@ -133,11 +133,7 @@ export const updateProfile = async (req, res) => {
 
     const updateData = {};
     if (username) updateData.username = username;
-
-    if (file) {
-      const avatarUrl = await uploadFile(file);
-      updateData.avatarUrl = avatarUrl;
-    }
+    if (file) updateData.avatarUrl = await uploadFile(file);
 
     const updatedUser = await User.findByIdAndUpdate(userId, { $set: updateData }, { new: true });
 
@@ -152,6 +148,7 @@ export const updateProfile = async (req, res) => {
     });
   } catch (error) {
     console.error("Update profile error:", error);
-    res.status(500).json({ message: "Lỗi server" });
+    res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
+
