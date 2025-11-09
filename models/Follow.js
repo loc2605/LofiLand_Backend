@@ -4,8 +4,8 @@ const followSchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     artist: {
-      id: { type: String, required: true },
-      name: { type: String, required: true },
+      id: { type: String},
+      name: { type: String },
       avatarUrl: { type: String },
       link: { type: String },
       nbFan: { type: Number, default: 0 },

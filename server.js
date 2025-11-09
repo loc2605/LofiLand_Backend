@@ -1,6 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
-import mongoose from "mongoose";
+//import mongoose from "mongoose";
 import connectDB from "./config/db.js";
 import userRoutes from "./routes/userRoutes.js";
 import songRoutes from "./routes/songRoutes.js";
@@ -12,6 +12,8 @@ import playlistRoutes from "./routes/playlistsRoutes.js";
 import followRoutes from "./routes/followRoutes.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 import deezerRoutes from "./routes/deezerRoutes.js";
+import historyRoutes from "./routes/historyRoutes.js";
+
 import cors from "cors";
 
 dotenv.config();
@@ -40,6 +42,7 @@ app.use("/api/deezer", deezerRoutes);
 app.use("/api/favorites", favoriteRoutes);
 app.use("/api/playlists", playlistRoutes);
 app.use("/api/follows", followRoutes);
+app.use("/api/history", historyRoutes);
 
 // middleware xử lý lỗi
 app.use(notFound);

@@ -116,7 +116,7 @@ export const getAlbums = async (req, res) => {
     } else {
       // Lấy 50 track chart
       const trackRes = await axios.get(
-        `https://api.deezer.com/search?q=all&limit=50`
+        `https://api.deezer.com/search?q=all&limit=20`
       );
       const tracksData = trackRes.data.data || [];
 
