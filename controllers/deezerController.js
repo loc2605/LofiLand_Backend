@@ -252,7 +252,6 @@ export const getArtistDetail = async (req, res) => {
     const { artistId } = req.params;
     if (!artistId) return res.status(400).json({ message: "Thiếu artistId" });
 
-    // Gọi 3 API song song
     const [artistRes, albumsRes, tracksRes] = await Promise.all([
       axios.get(`https://api.deezer.com/artist/${artistId}`),
       axios.get(`https://api.deezer.com/artist/${artistId}/albums`),
