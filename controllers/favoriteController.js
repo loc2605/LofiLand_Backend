@@ -27,11 +27,29 @@ export const addToFavorites = async (req, res) => {
       albumTitle: data.album.title,
       albumCover: data.album.cover_medium || "",
       previewUrl: data.preview,
+      fullUrl: data.link,
     });
 
+    // Trả về đúng cấu trúc Song
+    const song = {
+      id: favorite.song,
+      title: favorite.title,
+      artist: {
+        name: favorite.artistName,
+        avatarUrl: favorite.artistAvatar || "https://placehold.co/100",
+      },
+      album: {
+        title: favorite.albumTitle,
+        coverUrl: favorite.albumCover || "https://placehold.co/300",
+      },
+      audioUrl: favorite.previewUrl,
+      fullUrl: favorite.fullUrl || "",
+    };
+
     return res.status(201).json({
+      success: true,
       message: "Đã thêm vào danh sách yêu thích",
-      favorite,
+      song,
     });
   } catch (error) {
     console.error("addToFavorites error:", error.message);
@@ -52,7 +70,7 @@ export const removeFromFavorites = async (req, res) => {
       return res.status(404).json({ message: "Bài hát không có trong danh sách yêu thích" });
     }
 
-    res.status(200).json({ message: "Đã xóa khỏi yêu thích" });
+    res.status(200).json({ success: true, message: "Đã xóa khỏi yêu thích", songId });
   } catch (error) {
     console.error("removeFromFavorites error:", error.message);
     res.status(500).json({ message: "Lỗi server", error: error.message });
@@ -60,7 +78,7 @@ export const removeFromFavorites = async (req, res) => {
 };
 
 /**
- * @desc Lấy danh sách bài hát yêu thích của người dùng (đã đủ để phát nhạc)
+ * @desc Lấy danh sách bài hát yêu thích của người dùng (trả luôn đúng cấu trúc Song)
  */
 export const getFavoriteSongs = async (req, res) => {
   try {
@@ -70,18 +88,19 @@ export const getFavoriteSongs = async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    const songs = favorites.map((fav) => ({
+    const songs = favorites.map(fav => ({
       id: fav.song,
       title: fav.title,
       artist: {
         name: fav.artistName,
-        avatarUrl: fav.artistAvatar,
+        avatarUrl: fav.artistAvatar || "https://placehold.co/100",
       },
       album: {
         title: fav.albumTitle,
-        coverUrl: fav.albumCover,
+        coverUrl: fav.albumCover || "https://placehold.co/300",
       },
       audioUrl: fav.previewUrl,
+      fullUrl: fav.fullUrl || "",
     }));
 
     res.status(200).json({
