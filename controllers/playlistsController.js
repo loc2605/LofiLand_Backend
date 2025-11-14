@@ -41,13 +41,14 @@ export const getUserPlaylists = async (req, res) => {
     res.json({
       success: true,
       playlists: playlists.map(p => ({
-        id: p._id,
-        name: p.title,
+        _id: p._id,
+        title: p.title,
         description: p.description || "",
         cover: coverMap[p._id] || DEFAULT_COVER,
         count: countMap[p._id] || 0,
       })),
     });
+
   } catch (err) {
     console.error("getUserPlaylists error:", err.message);
     res.status(500).json({
@@ -121,19 +122,15 @@ export const getPlaylistSongs = async (req, res) => {
     const userId = req.user?._id;
 
     if (!userId) {
-      console.error("User ID missing in request (authMiddleware issue?)");
       return res.status(401).json({
         success: false,
         message: "Người dùng chưa đăng nhập hoặc token không hợp lệ",
       });
     }
 
-    console.log("Fetching playlist songs:", { playlistId, userId });
-
     // Kiểm tra playlist tồn tại và thuộc về user
     const playlist = await Playlist.findOne({ _id: playlistId, user: userId }).lean();
     if (!playlist) {
-      console.error("Playlist not found or not owned by user:", playlistId);
       return res.status(404).json({
         success: false,
         message: "Playlist không tồn tại hoặc không thuộc quyền sở hữu của bạn",
@@ -146,7 +143,6 @@ export const getPlaylistSongs = async (req, res) => {
       songs = await PlaylistSong.find({ playlist: playlistId })
         .sort({ addedAt: -1 })
         .lean();
-      console.log(`Found ${songs.length} songs in playlist ${playlistId}`);
     } catch (err) {
       console.error("Error fetching PlaylistSong:", err.message);
     }
@@ -177,7 +173,6 @@ export const getPlaylistSongs = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("getPlaylistSongs error:", err);
     res.status(500).json({
       success: false,
       message: "Lỗi server",
