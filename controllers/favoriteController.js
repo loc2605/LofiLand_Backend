@@ -16,7 +16,14 @@ export const addToFavorites = async (req, res) => {
     }
 
     // Lấy chi tiết bài hát từ Deezer API
-    const { data } = await axios.get(`https://api.deezer.com/track/${songId}`);
+    let data;
+    try {
+      const response = await axios.get(`https://api.deezer.com/track/${songId}`);
+      data = response.data;
+    } catch (err) {
+      console.error(`Error fetching song ${songId} from Deezer:`, err.message);
+      return res.status(500).json({ message: "Không thể lấy dữ liệu bài hát", error: err.message });
+    }
 
     const favorite = await Favorite.create({
       user: userId,
@@ -79,29 +86,47 @@ export const removeFromFavorites = async (req, res) => {
 
 /**
  * @desc Lấy danh sách bài hát yêu thích của người dùng (trả luôn đúng cấu trúc Song)
+ *       — tự động refresh previewUrl từ Deezer nếu cần
  */
 export const getFavoriteSongs = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    const favorites = await Favorite.find({ user: userId })
-      .sort({ createdAt: -1 })
-      .lean();
+    const favorites = await Favorite.find({ user: userId }).sort({ createdAt: -1 }).lean();
 
-    const songs = favorites.map(fav => ({
-      id: fav.song,
-      title: fav.title,
-      artist: {
-        name: fav.artistName,
-        avatarUrl: fav.artistAvatar || "https://placehold.co/100",
-      },
-      album: {
-        title: fav.albumTitle,
-        coverUrl: fav.albumCover || "https://placehold.co/300",
-      },
-      audioUrl: fav.previewUrl,
-      fullUrl: fav.fullUrl || "",
-    }));
+    const songs = await Promise.all(
+      favorites.map(async (fav) => {
+        let previewUrl = fav.previewUrl;
+
+        // Refresh previewUrl từ Deezer nếu cần
+        try {
+          const { data } = await axios.get(`https://api.deezer.com/track/${fav.song}`);
+          previewUrl = data.preview || previewUrl;
+
+          // Update DB nếu khác
+          if (previewUrl !== fav.previewUrl) {
+            await Favorite.updateOne({ _id: fav._id }, { previewUrl });
+          }
+        } catch (err) {
+          console.error(`Error refreshing previewUrl for song ${fav.song}:`, err.message);
+        }
+
+        return {
+          id: fav.song,
+          title: fav.title,
+          artist: {
+            name: fav.artistName,
+            avatarUrl: fav.artistAvatar || "https://placehold.co/100",
+          },
+          album: {
+            title: fav.albumTitle,
+            coverUrl: fav.albumCover || "https://placehold.co/300",
+          },
+          audioUrl: previewUrl,
+          fullUrl: fav.fullUrl || "",
+        };
+      })
+    );
 
     res.status(200).json({
       success: true,
