@@ -1,5 +1,9 @@
 import History from "../models/History.js";
+import axios from "axios";
 
+/**
+ * @desc Thêm bài hát vào lịch sử phát
+ */
 export const addHistory = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -48,15 +52,48 @@ export const addHistory = async (req, res) => {
   }
 };
 
-
+/**
+ * @desc Lấy lịch sử phát, đồng thời cập nhật link nhạc từ Deezer
+ */
 export const getHistory = async (req, res) => {
   try {
     const userId = req.user._id;
-    const history = await History.find({ user: userId })
+
+    let history = await History.find({ user: userId })
       .sort({ playedAt: -1 })
       .limit(50);
 
-    res.json({ success: true, history });
+    // Refresh audioUrl từ Deezer nếu cần
+    const updatedHistory = await Promise.all(
+      history.map(async (h) => {
+        let audioUrl = h.song.audioUrl;
+
+        try {
+          const { data } = await axios.get(`https://api.deezer.com/track/${h.song.id}`);
+          if (data.preview && data.preview !== h.song.audioUrl) {
+            audioUrl = data.preview;
+
+            // Cập nhật vào DB
+            await History.updateOne(
+              { _id: h._id },
+              { "song.audioUrl": audioUrl }
+            );
+          }
+        } catch (err) {
+          console.error(`Error fetching previewUrl for song ${h.song.id}:`, err.message);
+        }
+
+        return {
+          ...h.toObject(),
+          song: {
+            ...h.song,
+            audioUrl,
+          },
+        };
+      })
+    );
+
+    res.json({ success: true, history: updatedHistory });
   } catch (error) {
     console.error("Get history error:", error);
     res.status(500).json({ message: "Cannot get song history" });
