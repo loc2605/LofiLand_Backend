@@ -1,11 +1,11 @@
-# 🧠 LofiLand - Backend API
+# LofiLand - Backend API
 
 Đây là **Backend** của dự án **LofiLand**, ứng dụng nghe nhạc đa nền tảng.  
 Dự án được xây dựng bằng **Node.js**, sử dụng **MongoDB Atlas** làm cơ sở dữ liệu và **AWS S3** để lưu trữ avatar người dùng.
 
 ---
 
-## 🚀 Giới Thiệu
+## Giới Thiệu
 
 Backend của **LofiLand** cung cấp các API RESTful cho ứng dụng client (React Native + Expo), hỗ trợ:
 
@@ -16,14 +16,14 @@ Backend của **LofiLand** cung cấp các API RESTful cho ứng dụng client (
 
 ---
 
-## 👥 Thành Viên Phát Triển
+## Thành Viên Phát Triển
 
 - **Đoàn Lan Hương**
 - **Phan Hữu Lộc**
 
 ---
 
-## 🛠️ Công Nghệ Sử Dụng
+## Công Nghệ Sử Dụng
 
 | Thành phần        | Công nghệ            |
 | ----------------- | -------------------- |
@@ -38,6 +38,6 @@ Backend của **LofiLand** cung cấp các API RESTful cho ứng dụng client (
 
 ---
 
-### 🖤 Cảm Ơn Vì Đã Quan Tâm Đến LofiLand!
+### Cảm Ơn Vì Đã Quan Tâm Đến LofiLand
 
 > Hãy bật một bản nhạc yêu thích và thư giãn cùng chúng tôi.
