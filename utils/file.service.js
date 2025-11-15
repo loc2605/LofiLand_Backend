@@ -12,6 +12,7 @@ const FILE_TYPE_MATCH = [
   "image/jpg",
   "image/gif",
   "video/mp3",
+  "image/webp",
   "video/mp4",
   "application/pdf",
   "application/msword",
