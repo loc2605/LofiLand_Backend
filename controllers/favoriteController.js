@@ -1,140 +1,191 @@
-import Favorite from "../models/Favorite.js";
 import axios from "axios";
+import Favorite from "../models/Favorite.js";
 
 /**
- * @desc Thêm bài hát vào danh sách yêu thích
+ * Deezer Axios instance
+ */
+const DZ = axios.create({
+  baseURL: "https://api.deezer.com",
+  timeout: 8000,
+});
+
+/**
+ * Concurrency helper: chạy tasks song song nhưng giới hạn số lượng
+ */
+async function promisePool(tasks, limit = 5) {
+  const ret = [];
+  const executing = [];
+  for (const t of tasks) {
+    const p = Promise.resolve().then(t);
+    ret.push(p);
+
+    if (limit <= tasks.length) {
+      const e = p.then(() => executing.splice(executing.indexOf(e), 1));
+      executing.push(e);
+      if (executing.length >= limit) {
+        await Promise.race(executing);
+      }
+    }
+  }
+  return Promise.all(ret);
+}
+
+/**
+ * Helper: Lấy preview từ Deezer
+ */
+async function fetchPreview(songId) {
+  try {
+    const { data } = await DZ.get(`/track/${songId}`);
+    return data?.preview || null;
+  } catch (err) {
+    console.error(`Deezer preview error (${songId}):`, err.response?.data || err.message);
+    return null;
+  }
+}
+
+/**
+ * @desc Add to favorites
  */
 export const addToFavorites = async (req, res) => {
   try {
-    const { songId } = req.body;
-    const userId = req.user._id;
+    const songId = req.body?.songId;
+    const userId = req.user?._id;
+
+    if (!songId) return res.status(400).json({ message: "songId is required" });
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
     // Kiểm tra trùng
-    const existing = await Favorite.findOne({ user: userId, song: songId });
-    if (existing) {
+    const exists = await Favorite.findOne({ user: userId, song: songId }).lean();
+    if (exists) {
       return res.status(400).json({ message: "Bài hát đã có trong yêu thích" });
     }
 
-    // Lấy chi tiết bài hát từ Deezer API
-    let data;
+    // Lấy track từ Deezer
+    let track;
     try {
-      const response = await axios.get(`https://api.deezer.com/track/${songId}`);
-      data = response.data;
+      const { data } = await DZ.get(`/track/${songId}`);
+      track = data;
     } catch (err) {
-      console.error(`Error fetching song ${songId} from Deezer:`, err.message);
-      return res.status(500).json({ message: "Không thể lấy dữ liệu bài hát", error: err.message });
+      console.error("Deezer track error:", err.message);
+      return res.status(500).json({ message: "Không thể lấy dữ liệu bài hát" });
     }
 
-    const favorite = await Favorite.create({
-      user: userId,
-      song: songId,
-      title: data.title,
-      artistName: data.artist.name,
-      artistAvatar: data.artist.picture_medium || "",
-      albumTitle: data.album.title,
-      albumCover: data.album.cover_medium || "",
-      previewUrl: data.preview,
-      fullUrl: data.link,
-    });
+    if (!track || !track.id) {
+      return res.status(404).json({ message: "Không tìm thấy bài hát trên Deezer" });
+    }
 
-    // Trả về đúng cấu trúc Song
-    const song = {
-      id: favorite.song,
-      title: favorite.title,
-      artist: {
-        name: favorite.artistName,
-        avatarUrl: favorite.artistAvatar || "https://placehold.co/100",
-      },
-      album: {
-        title: favorite.albumTitle,
-        coverUrl: favorite.albumCover || "https://placehold.co/300",
-      },
-      audioUrl: favorite.previewUrl,
-      fullUrl: favorite.fullUrl || "",
-    };
+    const fav = await Favorite.create({
+      user: userId,
+      song: track.id.toString(),
+      title: track.title,
+      artistName: track.artist?.name,
+      artistAvatar: track.artist?.picture_medium || "",
+      albumTitle: track.album?.title,
+      albumCover: track.album?.cover_medium || "",
+      previewUrl: track.preview || "",
+      fullUrl: track.link || "",
+    });
 
     return res.status(201).json({
       success: true,
-      message: "Đã thêm vào danh sách yêu thích",
-      song,
+      song: {
+        id: fav.song,
+        title: fav.title,
+        artist: {
+          name: fav.artistName,
+          avatarUrl: fav.artistAvatar || "https://placehold.co/100",
+        },
+        album: {
+          title: fav.albumTitle,
+          coverUrl: fav.albumCover || "https://placehold.co/300",
+        },
+        audioUrl: fav.previewUrl,
+        fullUrl: fav.fullUrl,
+      },
     });
-  } catch (error) {
-    console.error("addToFavorites error:", error.message);
-    res.status(500).json({ message: "Lỗi server", error: error.message });
+  } catch (err) {
+    console.error("addToFavorites error:", err);
+    res.status(500).json({ message: "Lỗi server" });
   }
 };
 
 /**
- * @desc Xoá bài hát khỏi danh sách yêu thích
+ * @desc Remove from favorites
  */
 export const removeFromFavorites = async (req, res) => {
   try {
-    const { songId } = req.params;
-    const userId = req.user._id;
+    const songId = req.params?.songId;
+    const userId = req.user?._id;
 
-    const favorite = await Favorite.findOneAndDelete({ user: userId, song: songId });
-    if (!favorite) {
-      return res.status(404).json({ message: "Bài hát không có trong danh sách yêu thích" });
+    if (!songId) return res.status(400).json({ message: "songId is required" });
+
+    const deleted = await Favorite.findOneAndDelete({ user: userId, song: songId });
+
+    if (!deleted) {
+      return res.status(404).json({ message: "Không có trong danh sách yêu thích" });
     }
 
-    res.status(200).json({ success: true, message: "Đã xóa khỏi yêu thích", songId });
-  } catch (error) {
-    console.error("removeFromFavorites error:", error.message);
-    res.status(500).json({ message: "Lỗi server", error: error.message });
+    return res.json({ success: true, message: "Đã xóa khỏi yêu thích", songId });
+  } catch (err) {
+    console.error("removeFromFavorites error:", err);
+    res.status(500).json({ message: "Lỗi server" });
   }
 };
 
 /**
- * @desc Lấy danh sách bài hát yêu thích của người dùng (trả luôn đúng cấu trúc Song)
- *       — tự động refresh previewUrl từ Deezer nếu cần
+ * @desc Get favorite songs
+ * - Auto update previewUrl nếu null / rỗng
+ * - Dùng concurrency để tránh spam Deezer
  */
 export const getFavoriteSongs = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user?._id;
 
-    const favorites = await Favorite.find({ user: userId }).sort({ createdAt: -1 }).lean();
+    const favorites = await Favorite.find({ user: userId })
+      .sort({ createdAt: -1 })
+      .lean();
 
-    const songs = await Promise.all(
-      favorites.map(async (fav) => {
-        let previewUrl = fav.previewUrl;
+    if (favorites.length === 0) {
+      return res.json({ success: true, songs: [] });
+    }
 
-        // Refresh previewUrl từ Deezer nếu cần
-        try {
-          const { data } = await axios.get(`https://api.deezer.com/track/${fav.song}`);
-          previewUrl = data.preview || previewUrl;
+    const tasks = favorites.map((fav) => async () => {
+      let previewUrl = fav.previewUrl;
 
-          // Update DB nếu khác
-          if (previewUrl !== fav.previewUrl) {
-            await Favorite.updateOne({ _id: fav._id }, { previewUrl });
-          }
-        } catch (err) {
-          console.error(`Error refreshing previewUrl for song ${fav.song}:`, err.message);
+      // Nếu chưa có preview thì fetch Deezer
+      if (!previewUrl) {
+        const newPreview = await fetchPreview(fav.song);
+        if (newPreview) {
+          previewUrl = newPreview;
+          await Favorite.updateOne({ _id: fav._id }, { previewUrl: newPreview });
         }
+      }
 
-        return {
-          id: fav.song,
-          title: fav.title,
-          artist: {
-            name: fav.artistName,
-            avatarUrl: fav.artistAvatar || "https://placehold.co/100",
-          },
-          album: {
-            title: fav.albumTitle,
-            coverUrl: fav.albumCover || "https://placehold.co/300",
-          },
-          audioUrl: previewUrl,
-          fullUrl: fav.fullUrl || "",
-        };
-      })
-    );
+      return {
+        id: fav.song,
+        title: fav.title,
+        artist: {
+          name: fav.artistName,
+          avatarUrl: fav.artistAvatar || "https://placehold.co/100",
+        },
+        album: {
+          title: fav.albumTitle,
+          coverUrl: fav.albumCover || "https://placehold.co/300",
+        },
+        audioUrl: previewUrl,
+        fullUrl: fav.fullUrl || "",
+      };
+    });
 
-    res.status(200).json({
+    const songs = await promisePool(tasks, 5);
+
+    return res.json({
       success: true,
       count: songs.length,
       songs,
     });
-  } catch (error) {
-    console.error("getFavoriteSongs error:", error.message);
-    res.status(500).json({ message: "Lỗi server", error: error.message });
+  } catch (err) {
+    console.error("getFavoriteSongs error:", err);
+    res.status(500).json({ message: "Lỗi server" });
   }
 };
