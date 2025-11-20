@@ -205,3 +205,23 @@ export const searchAll = async (req, res) => {
     artists: (artists?.data || []).map(formatArtist),
   });
 };
+
+/** -------------------
+ *  GET TRENDING (top tracks + top artists)
+ * ------------------*/
+export const getTrending = async (req, res) => {
+  try {
+    // Top 10 tracks trending
+    const tracksData = await dzGet("/chart/0/tracks?limit=10");
+    const tracks = (tracksData?.data || []).map(formatTrack);
+
+    // Top 10 artists trending
+    const artistsData = await dzGet("/chart/0/artists?limit=10");
+    const artists = (artistsData?.data || []).map(formatArtist);
+
+    res.status(200).json({ success: true, tracks, artists });
+  } catch (err) {
+    console.error("Trending API error:", err);
+    res.status(500).json({ success: false, message: "Không thể lấy dữ liệu trending" });
+  }
+};

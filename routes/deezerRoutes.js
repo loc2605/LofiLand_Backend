@@ -8,6 +8,7 @@ import {
   getTracksByAlbum,
   getArtistDetail,
   searchAll,
+  getTrending,
 } from "../controllers/deezerController.js";
 
 const router = express.Router();
@@ -20,5 +21,6 @@ router.get("/random", getRandomTracks);
 router.get("/album/:albumId/tracks", getTracksByAlbum); 
 router.get("/artist/:artistId/detail", getArtistDetail);
 router.get("/search", searchAll);
+router.get("/trending", getTrending);
 
 export default router;

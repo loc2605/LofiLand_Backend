@@ -64,7 +64,6 @@ export const getHistory = async (req, res) => {
       (h) => !h.song?.audioUrl
     );
 
-    // Nếu không cần refresh → trả luôn
     if (needRefresh.length === 0) {
       return res.json({ success: true, history });
     }
@@ -88,7 +87,7 @@ export const getHistory = async (req, res) => {
               { "song.audioUrl": data.preview }
             );
 
-            h.song.audioUrl = data.preview; // update local copy
+            h.song.audioUrl = data.preview;
           }
         } catch (err) {
           console.error("Deezer error:", err.message);
