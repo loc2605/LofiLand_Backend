@@ -51,15 +51,21 @@ export const getTracks = async (req, res) => {
   const query = req.query.query || "";
 
   const url = query
-    ? `/search?q=${encodeURIComponent(query)}&limit=20`
-    : `/chart/0/tracks?limit=20`;
+    ? `/search?q=${encodeURIComponent(query)}&limit=50`
+    : `/chart/0/tracks?limit=50`;
 
   const data = await dzGet(url);
-  if (!data) return res.status(500).json({ message: "Lỗi Deezer" });
+  if (!data || !data.data || data.data.length === 0) {
+    return res.status(404).json({ message: "Không tìm thấy bài hát" });
+  }
+
+  // Random 20 bài từ 50 bài
+  const shuffled = data.data.sort(() => 0.5 - Math.random());
+  const tracks = shuffled.slice(0, 20).map(formatTrack);
 
   res.json({
     success: true,
-    tracks: data.data.map(formatTrack),
+    tracks,
   });
 };
 
@@ -83,22 +89,32 @@ export const getTrackById = async (req, res) => {
  * ------------------*/
 export const getArtists = async (req, res) => {
   const query = req.query.query;
+  const limitRandom = parseInt(req.query.limit) || 20;
 
   let data;
 
   if (query) {
-    const search = await dzGet(`/search/artist?q=${encodeURIComponent(query)}&limit=20`);
+    const search = await dzGet(`/search/artist?q=${encodeURIComponent(query)}&limit=60`);
     data = search?.data || [];
   } else {
     const chart = await dzGet(`/chart`);
     data = chart?.artists?.data || [];
   }
 
+  if (!data || data.length === 0) {
+    return res.json({ success: true, artists: [] });
+  }
+
+  // Random
+  const shuffled = data.sort(() => 0.5 - Math.random());
+  const artists = shuffled.slice(0, Math.min(limitRandom, shuffled.length)).map(formatArtist);
+
   res.json({
     success: true,
-    artists: data.map(formatArtist),
+    artists,
   });
 };
+
 
 /** -------------------
  *  GET ALBUMS (search or from chart)
@@ -109,7 +125,7 @@ export const getAlbums = async (req, res) => {
   let rawAlbums = [];
 
   if (query) {
-    const search = await dzGet(`/search/album?q=${encodeURIComponent(query)}&limit=30`);
+    const search = await dzGet(`/search/album?q=${encodeURIComponent(query)}&limit=50`);
     rawAlbums = search?.data || [];
   } else {
     const chart = await dzGet(`/chart/0/albums?limit=50`);
