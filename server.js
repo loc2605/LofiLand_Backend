@@ -13,6 +13,7 @@ import followRoutes from "./routes/followRoutes.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 import deezerRoutes from "./routes/deezerRoutes.js";
 import historyRoutes from "./routes/historyRoutes.js";
+import aiRouter from "./routes/aiRoutes.js";
 
 import cors from "cors";
 
@@ -43,6 +44,7 @@ app.use("/api/favorites", favoriteRoutes);
 app.use("/api/playlists", playlistRoutes);
 app.use("/api/follows", followRoutes);
 app.use("/api/history", historyRoutes);
+app.use("/api/ai", aiRouter);
 
 // middleware xử lý lỗi
 app.use(notFound);

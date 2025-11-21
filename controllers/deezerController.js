@@ -120,20 +120,16 @@ export const getArtists = async (req, res) => {
  *  GET ALBUMS (search or from chart)
  * ------------------*/
 export const getAlbums = async (req, res) => {
-  const query = req.query.query;
+  const keyword = "nhạc";
 
-  let rawAlbums = [];
-
-  if (query) {
-    const search = await dzGet(`/search/album?q=${encodeURIComponent(query)}&limit=50`);
-    rawAlbums = search?.data || [];
-  } else {
-    const chart = await dzGet(`/chart/0/albums?limit=50`);
-    rawAlbums = chart?.data || [];
-  }
+  // search album của Deezer
+  const search = await dzGet(`/search/album?q=${encodeURIComponent(keyword)}&limit=100`);
+  const rawAlbums = search?.data || [];
 
   res.json({
     success: true,
+    keywordUsed: keyword,
+    total: rawAlbums.length,
     albums: rawAlbums.map(formatAlbum),
   });
 };
