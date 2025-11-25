@@ -13,14 +13,14 @@ import { authMiddleware } from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 // --- Playlist CRUD ---
-router.post("/", authMiddleware, createPlaylist);                // Tạo playlist mới
-router.get("/", authMiddleware, getUserPlaylists);               // Lấy tất cả playlist của user
-router.put("/:playlistId", authMiddleware, updatePlaylist);      // Cập nhật playlist
-router.delete("/:playlistId", authMiddleware, deletePlaylist);   // Xóa playlist
+router.post("/", authMiddleware, createPlaylist);       
+router.get("/", authMiddleware, getUserPlaylists);
+router.put("/:playlistId", authMiddleware, updatePlaylist);  
+router.delete("/:playlistId", authMiddleware, deletePlaylist); 
 
 // --- Playlist Songs ---
-router.post("/:playlistId/songs", authMiddleware, addSongToPlaylist);           // Thêm bài hát vào playlist
-router.get("/:playlistId/songs", authMiddleware, getPlaylistSongs);             // Lấy danh sách bài hát trong playlist
-router.delete("/:playlistId/songs/:songId", authMiddleware, removeSongFromPlaylist); // Xóa bài hát khỏi playlist
+router.post("/:playlistId/songs", authMiddleware, addSongToPlaylist);  
+router.get("/:playlistId/songs", authMiddleware, getPlaylistSongs);   
+router.delete("/:playlistId/songs/:songId", authMiddleware, removeSongFromPlaylist);
 
 export default router;

@@ -49,7 +49,6 @@ export const registerUser = async (req, res) => {
   } catch (error) {
     console.error("Register error:", error);
 
-    // Bắt lỗi duplicate key phòng trường hợp bỏ sót
     if (error.code === 11000) {
       const duplicateField = Object.keys(error.keyValue)[0];
       return res.status(400).json({
