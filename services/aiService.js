@@ -35,7 +35,7 @@ export async function generateText(prompt) {
 export async function analyzeMusicQuery(query) {
   const prompt = `
 Người dùng đang yêu cầu gợi ý nhạc. 
-Hãy phân tích mood hoặc cảm xúc từ câu sau và trả về keyword nhạc phù hợp (1–3 từ, tiếng Anh):
+Hãy phân tích mood hoặc cảm xúc từ câu sau và trả về keyword nhạc phù hợp (1–3 từ, tiếng Anh hoặc tiếng Việt):
 
 "${query}"
 
@@ -61,8 +61,6 @@ export async function suggestSongs(query) {
     // 1) AI phân tích mood / keyword
     const aiKeyword = await analyzeMusicQuery(query);
     const finalKeyword = aiKeyword || query;
-
-    console.log("AI keyword:", finalKeyword);
 
     // 2) Gọi Deezer bằng keyword AI chọn
     const res = await axios.get("https://api.deezer.com/search", {
